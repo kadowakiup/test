@@ -123,6 +123,7 @@ async function fetchAndRenderShifts(year, month, idToken) {
     pageTitle.style.display = "block";
     document.getElementById("notice-text").style.display = "block";
     submitBtn.style.display = "block";
+    document.getElementById("back-btn").style.display = "block";
 
   } catch (err) {
     console.error(err);
@@ -380,3 +381,16 @@ function createDropdown(rules, selectedValue, dateStr) {
   }
   return select;
 }
+
+document.getElementById("back-btn").addEventListener("click", () => {
+  // 1. 今表示されているフォームやタイトルを隠す
+  document.getElementById("shift-list").innerHTML = "";
+  document.getElementById("page-title").style.display = "none";
+  document.getElementById("notice-text").style.display = "none";
+  document.getElementById("submit-btn").style.display = "none";
+  document.getElementById("back-btn").style.display = "none";
+  document.getElementById("result").innerHTML = ""; 
+
+  // 2. 最初のご月選択ボタンをもう一度表示する
+  document.getElementById("month-selector").style.display = "block";
+});
