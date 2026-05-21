@@ -96,15 +96,18 @@ body {
             font-weight: 600;
         }
     }
-    #back-btn {
-        display: none;
-        position: absolute;
-        left: 36px;
-        top: 32px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0;
+    .title-container {
+        position: relative;
+        #back-btn {
+            display: none;
+            position: absolute;
+            left: 36px;
+            top: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
     }
     #notice-text {
         display: none;

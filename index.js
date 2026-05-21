@@ -1,16 +1,12 @@
 // index.js
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyZr7jUDQng4W965XEDJ3DRJNnPXFv_8ucXY9D7yiiz65P7iu2M5ZIiye_ln-TVOuaI/exec";
 
-// ★修正：固定ではなく変数にして、ボタンを押した時に年・月をセットする
+// 固定ではなく変数にして、ボタンを押した時に年・月をセットする
 let TARGET_YEAR;
 let TARGET_MONTH;
 
 // 休業日の設定（YYYY-MM-DD形式）
-const holidays = [
-  // `${TARGET_YEAR}-05-03`,
-  // `${TARGET_YEAR}-05-04`,
-  // `${TARGET_YEAR}-05-05`
-];
+const holidays = [];
 
 const startRules = {
   12: ["00", "15", "30", "45"], 13: ["00", "15", "30", "45"], 15: ["00", "15", "30", "45"],
@@ -56,7 +52,7 @@ window.onload = async function () {
       return;
     }
 
-    // ★追加：今月と来月の年・月を自動計算
+    // 今月と来月の年・月を自動計算
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
@@ -85,7 +81,7 @@ window.onload = async function () {
   }
 };
 
-// ★追加：選ばれた月をもとにデータを取得して描画する関数
+// 選ばれた月をもとにデータを取得して描画する関数
 async function fetchAndRenderShifts(year, month, idToken) {
   TARGET_YEAR = year;
   TARGET_MONTH = month;
@@ -107,7 +103,6 @@ async function fetchAndRenderShifts(year, month, idToken) {
     await loadHolidays();
 
     const profile = await liff.getProfile();
-    // ★修正：URLに targetYear と targetMonth を追加してGASに送る
     const url = `${GAS_URL}?action=fetch&userId=${encodeURIComponent(profile.userId)}&name=${encodeURIComponent(profile.displayName)}&targetYear=${TARGET_YEAR}&targetMonth=${TARGET_MONTH}&idToken=${encodeURIComponent(idToken)}&t=${Date.now()}`;
     
     const res = await fetch(url);
@@ -117,7 +112,7 @@ async function fetchAndRenderShifts(year, month, idToken) {
       throw new Error(data.message || "シフト取得に失敗しました");
     }
 
-    renderShifts(data.shifts || {}); // 関数名変更
+    renderShifts(data.shifts || {}); 
 
     pageTitle.textContent = `${TARGET_MONTH}月シフト提出`;
     pageTitle.style.display = "block";
@@ -157,120 +152,140 @@ async function fetchAndRenderShifts(year, month, idToken) {
   }
 }
 
-// 提出ボタンの処理
-document.getElementById("submit-btn").addEventListener("click", async () => {
-  const resultDiv = document.getElementById("result");
-  const submitBtn = document.getElementById("submit-btn");
-  const shiftsToSubmit = [];
-  let confirmationMessage = "【入力内容の確認】\n";
-  const rows = document.querySelectorAll(".shift-row");
-  
-  let hasError = false;
+// ==========================================
+// ★修正：HTMLの読み込みが終わってからボタンのクリック設定をするように囲む
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
 
-  rows.forEach(row => {
-    const dateStr = row.dataset.date;
-    const shiftId = row.dataset.shiftId || "";
+  // 提出ボタンの処理
+  document.getElementById("submit-btn").addEventListener("click", async () => {
+    const resultDiv = document.getElementById("result");
+    const submitBtn = document.getElementById("submit-btn");
+    const shiftsToSubmit = [];
+    let confirmationMessage = "【入力内容の確認】\n";
+    const rows = document.querySelectorAll(".shift-row");
     
-    let originalStart = (row.dataset.originalStart || "").trim();
-    if (originalStart === "null" || originalStart === "undefined") originalStart = "";
-    let originalEnd = (row.dataset.originalEnd || "").trim();
-    if (originalEnd === "null" || originalEnd === "undefined") originalEnd = "";
+    let hasError = false;
 
-    const startSelect = row.querySelector(".start-time");
-    const endSelect = row.querySelector(".end-time");
+    rows.forEach(row => {
+      const dateStr = row.dataset.date;
+      const shiftId = row.dataset.shiftId || "";
+      
+      let originalStart = (row.dataset.originalStart || "").trim();
+      if (originalStart === "null" || originalStart === "undefined") originalStart = "";
+      let originalEnd = (row.dataset.originalEnd || "").trim();
+      if (originalEnd === "null" || originalEnd === "undefined") originalEnd = "";
 
-    if (!startSelect || !endSelect) return;
+      const startSelect = row.querySelector(".start-time");
+      const endSelect = row.querySelector(".end-time");
 
-    const start = startSelect.value;
-    const end = endSelect.value;
+      if (!startSelect || !endSelect) return;
 
-    const dayDisplay = `${parseInt(dateStr.split("-")[2])}日`;
+      const start = startSelect.value;
+      const end = endSelect.value;
 
-    if (start && end) {
-      confirmationMessage += `${dayDisplay}: ${start} - ${end}\n`;
-    } else {
-      confirmationMessage += `${dayDisplay}: シフトなし\n`;
-    }
+      const dayDisplay = `${parseInt(dateStr.split("-")[2])}日`;
 
-    if ((start && !end) || (!start && end)) {
-      hasError = true;
-      return;
-    }
-    if (start && end) {
-      const startDt = new Date(`${dateStr}T${start}:00`);
-      const endDt = new Date(`${dateStr}T${end}:00`);
-      if (startDt >= endDt) {
+      if (start && end) {
+        confirmationMessage += `${dayDisplay}: ${start} - ${end}\n`;
+      } else {
+        confirmationMessage += `${dayDisplay}: シフトなし\n`;
+      }
+
+      if ((start && !end) || (!start && end)) {
         hasError = true;
         return;
       }
+      if (start && end) {
+        const startDt = new Date(`${dateStr}T${start}:00`);
+        const endDt = new Date(`${dateStr}T${end}:00`);
+        if (startDt >= endDt) {
+          hasError = true;
+          return;
+        }
+      }
+
+      if (start !== originalStart || end !== originalEnd) {
+        shiftsToSubmit.push({
+          date: dateStr,
+          start: start,
+          end: end,
+          id: shiftId
+        });
+      }
+    });
+
+    if (hasError) {
+      alert("出勤・退勤時間の入力に誤りがある日が含まれています。\n時間を確認してください。");
+      return;
     }
 
-    if (start !== originalStart || end !== originalEnd) {
-      shiftsToSubmit.push({
-        date: dateStr,
-        start: start,
-        end: end,
-        id: shiftId
+    if (shiftsToSubmit.length === 0) {
+      alert("変更されたシフトがありません。");
+      return;
+    }
+
+    confirmationMessage += "\n以上の内容で提出してもよろしいですか？";
+    if (!confirm(confirmationMessage)) {
+      return;
+    }
+
+    try {
+      submitBtn.disabled = true;
+      resultDiv.textContent = "提出中...";
+      resultDiv.classList.add("kousintyu", "teisyutu");
+
+      const profile = await liff.getProfile();
+      const idToken = liff.getIDToken();
+
+      const formBody = new URLSearchParams({
+        action: "submitAll",
+        userId: profile.userId,
+        name: profile.displayName,
+        targetYear: TARGET_YEAR,
+        targetMonth: TARGET_MONTH,
+        idToken: idToken,
+        shiftsData: JSON.stringify(shiftsToSubmit)
       });
+
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        body: formBody
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "提出に失敗しました");
+
+      alert("シフトの提出が完了しました！\n一度閉じてから再度提出する際は5~10分ほど反映にお待ちください");
+      liff.closeWindow();
+
+    } catch (err) {
+      console.error(err);
+      alert("エラーが発生しました: " + err.message);
+    } finally {
+      submitBtn.disabled = false;
+      resultDiv.textContent = "";
+      resultDiv.classList.remove("kousintyu", "teisyutu");
     }
   });
 
-  if (hasError) {
-    alert("出勤・退勤時間の入力に誤りがある日が含まれています。\n時間を確認してください。");
-    return;
-  }
+  // 戻るボタンの処理
+  document.getElementById("back-btn").addEventListener("click", () => {
+    // 1. 今表示されているフォームやタイトルを隠す
+    document.getElementById("shift-list").innerHTML = "";
+    document.getElementById("page-title").style.display = "none";
+    document.getElementById("notice-text").style.display = "none";
+    document.getElementById("submit-btn").style.display = "none";
+    document.getElementById("back-btn").style.display = "none";
+    document.getElementById("result").innerHTML = ""; 
 
-  if (shiftsToSubmit.length === 0) {
-    alert("変更されたシフトがありません。");
-    return;
-  }
+    // 2. 最初のご月選択ボタンをもう一度表示する
+    document.getElementById("month-selector").style.display = "block";
+  });
 
-  confirmationMessage += "\n以上の内容で提出してもよろしいですか？";
-  if (!confirm(confirmationMessage)) {
-    return;
-  }
+}); // DOMContentLoaded の閉じカッコ
 
-  try {
-    submitBtn.disabled = true;
-    resultDiv.textContent = "提出中...";
-    resultDiv.classList.add("kousintyu", "teisyutu");
-
-    const profile = await liff.getProfile();
-    const idToken = liff.getIDToken();
-
-    // ★修正：送信するデータにも targetYear と targetMonth を含める
-    const formBody = new URLSearchParams({
-      action: "submitAll",
-      userId: profile.userId,
-      name: profile.displayName,
-      targetYear: TARGET_YEAR,
-      targetMonth: TARGET_MONTH,
-      idToken: idToken,
-      shiftsData: JSON.stringify(shiftsToSubmit)
-    });
-
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      body: formBody
-    });
-
-    const data = await res.json();
-    if (!data.success) throw new Error(data.message || "提出に失敗しました");
-
-    alert("シフトの提出が完了しました！\n一度閉じてから再度提出する際は5~10分ほど反映にお待ちください");
-    liff.closeWindow();
-
-  } catch (err) {
-    console.error(err);
-    alert("エラーが発生しました: " + err.message);
-  } finally {
-    submitBtn.disabled = false;
-    resultDiv.textContent = "";
-    resultDiv.classList.remove("kousintyu", "teisyutu");
-  }
-});
-
-function renderShifts(shiftData) { // 関数名をrenderMayShiftsから変更
+function renderShifts(shiftData) { 
   const shiftListDiv = document.getElementById("shift-list");
   shiftListDiv.innerHTML = "";
 
@@ -381,16 +396,3 @@ function createDropdown(rules, selectedValue, dateStr) {
   }
   return select;
 }
-
-document.getElementById("back-btn").addEventListener("click", () => {
-  // 1. 今表示されているフォームやタイトルを隠す
-  document.getElementById("shift-list").innerHTML = "";
-  document.getElementById("page-title").style.display = "none";
-  document.getElementById("notice-text").style.display = "none";
-  document.getElementById("submit-btn").style.display = "none";
-  document.getElementById("back-btn").style.display = "none";
-  document.getElementById("result").innerHTML = ""; 
-
-  // 2. 最初のご月選択ボタンをもう一度表示する
-  document.getElementById("month-selector").style.display = "block";
-});

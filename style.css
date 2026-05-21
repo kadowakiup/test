@@ -94,7 +94,10 @@ body .button-container #submit-btn {
   width: 240px;
   font-weight: 600;
 }
-body #back-btn {
+body .title-container {
+  position: relative;
+}
+body .title-container #back-btn {
   display: none;
   position: absolute;
   left: 36px;
