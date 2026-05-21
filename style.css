@@ -1,0 +1,96 @@
+@charset "UTF-8";
+.holiday-text {
+  color: #ff4d8d;
+}
+
+.past-text {
+  color: #888;
+}
+
+.container {
+  width: 90%;
+  margin: 0 auto;
+}
+
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans", sans-serif;
+  width: 100vw;
+  height: 100vh;
+  color: #333;
+}
+body .kousintyu {
+  color: #01b6ff;
+  line-height: 100vh;
+  font-weight: 600;
+  font-size: 20px;
+  text-align: center;
+}
+body .kousintyu.teisyutu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  width: 100%;
+}
+body .title {
+  text-align: center;
+  font-size: 20px;
+  padding-top: 30px;
+  margin: 0 auto 20px;
+}
+body #shift-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  font-size: 15px;
+}
+body #shift-list .shift-row {
+  width: 240px;
+  justify-content: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #cbcbcb;
+}
+body #shift-list .shift-row_date {
+  font-family: "Roboto", sans-serif;
+  padding-right: 20px;
+  font-weight: 600;
+}
+body #shift-list .shift-row > select {
+  padding: 4px;
+  border-radius: 4px;
+  background-color: #f3f3f3;
+  font-size: 14px;
+}
+body #shift-list .shift-row.dont {
+  color: #888;
+}
+body #shift-list .shift-row .separator {
+  display: inline-flex; /* 幅と高さを持てるようにする */
+  width: 28px; /* 棒の長さ */
+  vertical-align: middle;
+  justify-content: center;
+}
+body #shift-list .shift-row .separator::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 1px;
+  background: #888;
+}
+body .button-container {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 60px;
+}
+body .button-container #submit-btn {
+  padding: 10px;
+  background-color: #01b6ff;
+  color: #fff;
+  border-radius: 4px;
+  width: 240px;
+  font-weight: 600;
+}/*# sourceMappingURL=style.css.map */
