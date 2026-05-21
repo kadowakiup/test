@@ -96,6 +96,22 @@ body {
             font-weight: 600;
         }
     }
+    #back-btn {
+        display: none;
+        position: absolute;
+        left: 15px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+    }
+    #notice-text {
+        display: none;
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 15px;
+    }
     
 }
 

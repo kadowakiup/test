@@ -93,4 +93,20 @@ body .button-container #submit-btn {
   border-radius: 4px;
   width: 240px;
   font-weight: 600;
+}
+body #back-btn {
+  display: none;
+  position: absolute;
+  left: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+body #notice-text {
+  display: none;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 15px;
 }/*# sourceMappingURL=style.css.map */
