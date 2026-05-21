@@ -42,7 +42,7 @@ window.onload = async function () {
   const btnNext = document.getElementById("btn-next-month");
 
   try {
-    await liff.init({ liffId: "2009827198-MNhumUto" });
+    await liff.init({ liffId: "2009569390-K8RpTDye" });
 
     if (!liff.isLoggedIn()) {
       resultDiv.innerHTML = "LINEログインへ移動します…";
