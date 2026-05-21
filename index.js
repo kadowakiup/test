@@ -4,6 +4,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbyZr7jUDQng4W965XEDJ3DR
 // 固定ではなく変数にして、ボタンを押した時に年・月をセットする
 let TARGET_YEAR;
 let TARGET_MONTH;
+let TARGET_MONTH_TYPE;
 
 // 休業日の設定（YYYY-MM-DD形式）
 const holidays = [];
@@ -72,8 +73,8 @@ window.onload = async function () {
     monthSelector.style.display = "block";
 
     // ボタンが押された時の処理
-    btnCurrent.onclick = () => fetchAndRenderShifts(currentYear, currentMonth, idToken);
-    btnNext.onclick = () => fetchAndRenderShifts(nextYear, nextMonth, idToken);
+    btnCurrent.onclick = () => fetchAndRenderShifts(currentYear, currentMonth, "今月", idToken);
+    btnNext.onclick = () => fetchAndRenderShifts(nextYear, nextMonth, "来月", idToken);
 
   } catch (err) {
     console.error(err);
@@ -82,9 +83,10 @@ window.onload = async function () {
 };
 
 // 選ばれた月をもとにデータを取得して描画する関数
-async function fetchAndRenderShifts(year, month, idToken) {
+async function fetchAndRenderShifts(year, month, monthType, idToken) {
   TARGET_YEAR = year;
   TARGET_MONTH = month;
+  TARGET_MONTH_TYPE = monthType;
 
   const resultDiv = document.getElementById("result");
   const monthSelector = document.getElementById("month-selector");
@@ -103,7 +105,7 @@ async function fetchAndRenderShifts(year, month, idToken) {
     await loadHolidays();
 
     const profile = await liff.getProfile();
-    const url = `${GAS_URL}?action=fetch&userId=${encodeURIComponent(profile.userId)}&name=${encodeURIComponent(profile.displayName)}&targetYear=${TARGET_YEAR}&targetMonth=${TARGET_MONTH}&idToken=${encodeURIComponent(idToken)}&t=${Date.now()}`;
+    const url = `${GAS_URL}?action=fetch&userId=${encodeURIComponent(profile.userId)}&name=${encodeURIComponent(profile.displayName)}&targetYear=${TARGET_YEAR}&targetMonth=${TARGET_MONTH}&monthType=${encodeURIComponent(TARGET_MONTH_TYPE)}&idToken=${encodeURIComponent(idToken)}&t=${Date.now()}`;
     
     const res = await fetch(url);
     const data = await res.json();
@@ -244,6 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         name: profile.displayName,
         targetYear: TARGET_YEAR,
         targetMonth: TARGET_MONTH,
+        monthType: TARGET_MONTH_TYPE, // ★追加
         idToken: idToken,
         shiftsData: JSON.stringify(shiftsToSubmit)
       });
