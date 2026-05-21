@@ -1,5 +1,5 @@
 // index.js
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw1R3VVsXwZnlo0whZY4jGufYB4uGr-120knnGsranSOCYxaZCBxAqsMc2-tiKi9uJL/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyZr7jUDQng4W965XEDJ3DRJNnPXFv_8ucXY9D7yiiz65P7iu2M5ZIiye_ln-TVOuaI/exec";
 
 // ★修正：固定ではなく変数にして、ボタンを押した時に年・月をセットする
 let TARGET_YEAR;
