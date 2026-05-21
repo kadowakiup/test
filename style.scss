@@ -96,6 +96,25 @@ body {
             font-weight: 600;
         }
     }
+    #month-selector {
+        text-align: center;
+        margin: 30px 0;
+    }
+    #month-selector p {
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+    .month-btn {
+        padding: 12px 24px;
+        margin: 0 10px;
+        background-color: #06C755;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+    }
     .title-container {
         position: relative;
         #back-btn {
