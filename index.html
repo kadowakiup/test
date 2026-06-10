@@ -1,43 +1,82 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>シフト一括入力</title>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>シフト確認/変更</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <!-- Noto sans -->
+    <!-- Robot -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="reset.css">
-  <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="style.css?v=24">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="index.js?v=22"></script>
+  </head>
+  <body>
+    <div id="result"></div>
+    <div id="calendarView">
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="index.js"></script>
-</head>
-<body>
-  <div id="result"></div>
-  
-  <div id="month-selector" style="display: none;">
-    <p>入力する月を選択してください</p>
-    <!-- CSSでまとめてデザインできるように class="month-btn" を追加 -->
-    <button id="btn-current-month" class="month-btn"></button>
-    <button id="btn-next-month" class="month-btn"></button>
-  </div>
+      <div id="summary" class="container" style="display:none;">
+        <div><span id="userName"></span></div>
+        <div><span id="workTime"></span></div>
+      </div>
+      
+      <div id="monthNav" class="container" style="display:none;">
+        <button id="prevMonth"><img src="image/left_arrow.png" alt="前月"></button>
+        <span id="currentMonth"></span>
+        <button id="nextMonth"><img src="image/right_arrow.png" alt="翌月"></button>
+      </div>
+      
+      <div id="calendar"></div>
+    </div>
 
-  <div class="title-container">
-    <button id="back-btn" style="display: none;">
-      <img src="images/left_arrow.png" alt="戻る">
-    </button>
-    <h1 id="page-title" class="title" style="display: none;"></h1>
-  </div>
+    <div id="detailView" class="container" style="display:none;">
+      <button id="backButton"><img src="image/left_arrow.png" alt="もどる"></button>
+      <h3 id="detailDate"></h3>
+      <p id="detailShift"></p>
 
-  <p id="notice-text" style="display: none;">※14:00~15:00、16:50~17:00、18:50~19:00は休憩となります</p>
-  
-  <div id="shift-list"></div>
-  
-  <div class="button-container">
-    <button id="submit-btn" style="display: none;">提出</button>
-  </div>
-</body>
+      <div class="detailView_menu">
+        <button id="btnEdit">時間変更</button>
+        <button id="btnDelete">休み / 削除</button>
+        <button id="btnMedical">診断書提出</button>
+      </div>
+
+      <div id="medicalArea" style="display:none;">
+        <p id="medicalGuide">
+          名前フルネームと、日付が記載されているか確認し、<br>
+          画像をアップロードしてください<br><br>
+          ＜ルール＞<br>
+          ・休んだ日が平日の場合→その日含め二日以内<br>
+          ・休んだ日が土日祝の場合→次の平日まで<br>
+          ※休んだ日より前の日の診断書は無効です<br>
+          翌月
+
+        </p>
+        <input type="file" id="medicalFile" accept="image/*" />
+        <div id="medicalPreviewWrap" style="margin-top:12px; display:none;">
+          <img id="medicalPreview" style="max-width:100%; border:1px solid #ccc; border-radius:8px;" />
+        </div>
+        <div id="medicalError" style="color:red; margin-top:8px;"></div>
+        <button id="submitMedical" style="margin-top:12px;">提出する</button>
+      </div>
+
+      <div id="editArea" style="display:none;">
+        <p>出勤</p>
+        <select id="startTime"></select>
+
+        <p>退勤</p>
+        <select id="endTime"></select>
+
+        <br><br>
+        <button id="saveEdit">保存</button>
+
+        <p id="editError" style="color:red;"></p>
+      </div>
+    </div>
+
+  </body>
 </html>

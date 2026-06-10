@@ -1,12 +1,4 @@
 @charset "UTF-8";
-.holiday-text {
-  color: #ff4d8d;
-}
-
-.past-text {
-  color: #888;
-}
-
 .container {
   width: 90%;
   margin: 0 auto;
@@ -16,120 +8,257 @@ body {
   font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans", sans-serif;
   width: 100vw;
   height: 100vh;
-  color: #333;
 }
-body .kousintyu {
+body #result {
+  text-align: center;
   color: #01b6ff;
-  line-height: 100vh;
   font-weight: 600;
   font-size: 20px;
-  text-align: center;
-}
-body .kousintyu.teisyutu {
   position: fixed;
   top: 0;
   left: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  width: 100%;
-}
-body .title {
-  text-align: center;
-  font-size: 20px;
-  padding-top: 30px;
-  margin: 0 auto 20px;
-}
-body #shift-list {
+  width: 100vw;
+  height: 100vh;
+  z-index: -100;
+  opacity: 0; /* 通常時は透明にしておく */
+  transition: opacity 0.2s; /* ふわっと表示させる */
+  /* line-heightの代わりにFlexboxでど真ん中に配置する */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-bottom: 30px;
-  font-size: 15px;
+  /* 何かしらの文字やボタン（中身）が入ったら一番手前に持ってくる */
 }
-body #shift-list .shift-row {
-  width: 240px;
-  justify-content: flex-start;
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #cbcbcb;
+body #result:not(:empty) {
+  z-index: 99999;
+  opacity: 1;
+  background-color: #fff; /* エラー時などは白背景にする */
 }
-body #shift-list .shift-row_date {
-  font-family: "Roboto", sans-serif;
-  padding-right: 20px;
-  font-weight: 600;
+body #result {
+  /* 提出中などの特別な処理の時 */
 }
-body #shift-list .shift-row > select {
-  padding: 4px;
-  border-radius: 4px;
-  background-color: #f3f3f3;
-  font-size: 14px;
+body #result.teisyututyu {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff; /* 背景が黒なので文字は白に */
+  z-index: 99999 !important;
+  /* スマホSafariのボタン突き抜けバグ対策 */
+  transform: translateZ(999px);
+  -webkit-transform: translateZ(999px);
 }
-body #shift-list .shift-row.dont {
-  color: #888;
+body #result.kousintyu {
+  background-color: #fff;
+  z-index: 99999 !important;
+  /* スマホSafariのボタン突き抜けバグ対策 */
+  transform: translateZ(999px);
+  -webkit-transform: translateZ(999px);
 }
-body #shift-list .shift-row .separator {
-  display: inline-flex; /* 幅と高さを持てるようにする */
-  width: 28px; /* 棒の長さ */
-  vertical-align: middle;
-  justify-content: center;
+body #calendarView {
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 0;
 }
-body #shift-list .shift-row .separator::before {
-  content: "";
-  display: block;
-  width: 8px;
-  height: 1px;
-  background: #888;
+body #calendarView #summary {
+  padding-top: 30px;
+  margin-bottom: 20px;
 }
-body .button-container {
+body #calendarView #summary #userName, body #calendarView #summary #workTime {
   display: flex;
   justify-content: center;
-  padding-bottom: 60px;
+  font-family: "Roboto", sans-serif;
 }
-body .button-container #submit-btn {
+body #calendarView #summary #userName {
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+body #calendarView #summary #workTime {
+  color: #616161;
+}
+body #calendarView #monthNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px auto 20px auto;
+}
+body #calendarView #monthNav #currentMonth {
+  font-size: 18px;
+  font-weight: 600;
+  color: #616161;
+}
+body #calendarView #monthNav #prevMonth, body #calendarView #monthNav #nextMonth {
+  background-color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body #calendarView #monthNav #prevMonth > img, body #calendarView #monthNav #nextMonth > img {
+  width: 18px;
+  height: 18px;
+  -o-object-fit: contain;
+     object-fit: contain;
+  -o-object-position: center;
+     object-position: center;
+}
+body #calendarView #calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+body #calendarView #calendar .week-header {
+  grid-column: 1/-1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 2px;
+  gap: 1px;
+}
+body #calendarView #calendar .week-header .week-cell {
+  font-size: 13px;
+  padding: 4px 0;
+  font-weight: 500;
+  color: #616161;
+}
+body #calendarView #calendar .day {
+  outline: solid 1px #d3d3d3;
+  min-height: 60px;
+  padding: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+body #calendarView #calendar .day .date {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+  font-family: "Roboto", sans-serif;
+}
+body #calendarView #calendar .day .shift-time {
+  white-space: nowrap; /* 改行させない */
+  overflow: hidden; /* はみ出た分を隠す */
+  padding: 3px;
+  border-radius: 3px;
+  background-color: #ededed;
+  font-family: "Roboto", sans-serif;
+  line-height: 1em;
+}
+body #calendarView #calendar .day .shift-time.state-medical {
+  font-weight: 600;
+  color: #00b894;
+  background-color: #f0fff4;
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans", sans-serif;
+}
+body #calendarView #calendar .day .shift-time.state-absent {
+  font-weight: 600;
+  color: #ff4d8d;
+  background-color: #fff0f5;
+  text-align: center;
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans", sans-serif;
+}
+body #calendarView #calendar .day .add-shift-button {
+  margin: 0 auto;
+  font-size: 22px;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #01b6ff;
+  pointer-events: auto;
+  opacity: 1;
+}
+body #detailView {
+  padding: 30px 0;
+  position: relative;
+  z-index: 0;
+}
+body #detailView #backButton {
+  display: flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+body #detailView #backButton > img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+body #detailView #detailDate {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 10px 0;
+  color: #616161;
+}
+body #detailView #detailShift {
+  margin: 0 0 20px 0;
+  font-family: "Roboto", sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+}
+body #detailView .detailView_menu {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+}
+body #detailView .detailView_menu > button {
+  color: #01b6ff;
+  width: 100px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 2px solid #01b6ff;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+}
+body #detailView #editArea {
+  grid-template-columns: 50px 140px;
+  grid-template-rows: 38px 38px 1fr;
+  font-size: 13px;
+  padding-top: 20px;
+  justify-content: center;
+  gap: 12px 0;
+}
+body #detailView #editArea > p {
+  color: #616161;
+}
+body #detailView #editArea > select {
+  border: 1px solid #c7c7c7;
+  border-radius: 6px;
+  padding: 4px;
+  width: 140px;
+  color: #333;
+}
+body #detailView #editArea #saveEdit {
+  grid-row: 3/4;
+  grid-column: 1/3;
   padding: 10px;
   background-color: #01b6ff;
   color: #fff;
   border-radius: 4px;
-  width: 240px;
-  font-weight: 600;
+  margin-top: 6px;
 }
-body #month-selector {
-  text-align: center;
-  margin: 30px 0;
+body #detailView #medicalArea {
+  font-size: 13px;
 }
-body #month-selector p {
-  margin-bottom: 20px;
-  font-weight: bold;
+body #detailView #medicalArea #medicalGuide {
+  padding-top: 8px;
+  line-height: 1.4em;
   color: #333;
 }
-body .month-btn {
-  padding: 12px 24px;
-  margin: 0 10px;
-  background-color: #06C755;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
+body #detailView #medicalArea #medicalFile {
+  color: #616161;
 }
-body .title-container {
-  position: relative;
-}
-body .title-container #back-btn {
-  display: none;
-  position: absolute;
-  left: 36px;
-  top: 32px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-body #notice-text {
-  display: none;
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 15px;
+body #detailView #medicalArea #submitMedical {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #01b6ff;
+  width: 100%;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
 }/*# sourceMappingURL=style.css.map */
