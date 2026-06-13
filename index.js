@@ -248,9 +248,9 @@ window.onload = async function () {
     const tDate = targetDateObj.getDate();
     const now = new Date();
 
-    const lockDeadline = new Date(tYear, tMonth, 15, 0, 0, 0);
+    const lockDeadline = new Date(tYear, tMonth, 13, 0, 0, 0);
     // 今が15日を過ぎていて、かつ対象シフトが15〜22日なら true（ロック中）を返す
-    return now >= lockDeadline && tDate >= 15 && tDate <= 22;
+    return now >= lockDeadline && tDate >= 13 && tDate <= 22;
   }
 
   // === ★日本の祝日データを取得する関数 ===
@@ -623,9 +623,9 @@ window.onload = async function () {
     const now = new Date();
 
     // そのシフトがある月の「15日の0時」をデッドラインとする
-    const lockDeadline = new Date(tYear, tMonth, 15, 0, 0, 0);
+    const lockDeadline = new Date(tYear, tMonth, 13, 0, 0, 0);
     // 今が締め切りを過ぎていて、かつシフトの日付が15〜22日なら編集不可
-    if (now >= lockDeadline && tDate >= 15 && tDate <= 22) {
+    if (now >= lockDeadline && tDate >= 13 && tDate <= 22) {
       canEditBase = false;
     }
     // === ★ここまで ===
@@ -1496,8 +1496,8 @@ window.onload = async function () {
       const dayOfWeek = new Date(year, month, day).getDay();
       
       // === ★追加：15日〜22日のシフト追加（+ボタン）もロックする ===
-      const lockDeadlineCalendar = new Date(year, month, 15, 0, 0, 0);
-      const isLocked = now >= lockDeadlineCalendar && day >= 15 && day <= 22;
+      const lockDeadlineCalendar = new Date(year, month, 13, 0, 0, 0);
+      const isLocked = now >= lockDeadlineCalendar && day >= 13 && day <= 22;
       // ==========================================================
 
       if (nationalHolidays[fullDateStr]) {
