@@ -1,4 +1,3 @@
-// 完璧
 window.onload = async function () {
   const calendarDiv = document.getElementById("calendar");
   const currentMonthSpan = document.getElementById("currentMonth");
@@ -44,7 +43,7 @@ window.onload = async function () {
   let currentDate = new Date();
 
   let fetchedName = "";
-  let nationalHolidays = {}; // ★追加：祝日データを保存する変数
+  let nationalHolidays = {}; // ★祝日データを保存する変数
 
   // 選択中シフト情報
   let selectedShiftId = "";
@@ -241,11 +240,22 @@ window.onload = async function () {
       btn.style.opacity = disabled ? "0.5" : "1";
     });
   }
+  // === ★追加：シフトが15日〜22日で、かつ今が15日以降かどうかを判定する関数 ===
+  function isLockedPeriod(dateStr) {
+    const targetDateObj = new Date(dateStr + "T00:00:00");
+    const tYear = targetDateObj.getFullYear();
+    const tMonth = targetDateObj.getMonth();
+    const tDate = targetDateObj.getDate();
+    const now = new Date();
 
-  // === ★追加：日本の祝日データを取得する関数 ===
+    const lockDeadline = new Date(tYear, tMonth, 15, 0, 0, 0);
+    // 今が15日を過ぎていて、かつ対象シフトが15〜22日なら true（ロック中）を返す
+    return now >= lockDeadline && tDate >= 15 && tDate <= 22;
+  }
+
+  // === ★日本の祝日データを取得する関数 ===
   async function loadHolidays() {
     try {
-      // 誰でも使える無料の祝日データAPIを利用
       const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
       nationalHolidays = await res.json();
     } catch (err) {
@@ -494,12 +504,13 @@ window.onload = async function () {
     return found.shift;
   }
 
+  // ===== ★休む日の当日00時判定関数（スマホのタイムゾーンバグ対策済み） =====
   function determineDeleteOrAbsent(dateStr) {
-    // ターゲットの日の 00:00:00 を基準にする
-    const deadline = new Date(dateStr + "T00:00:00");
+    const [year, month, day] = dateStr.split("-");
+    const deadline = new Date(year, month - 1, day, 0, 0, 0);
 
     const now = new Date();
-    // 現在時刻が当日00時より前（＝前日の23:59まで）なら「空白（削除）」、当日00時以降なら「当欠」
+    // 現在時刻が当日00時より前なら「空白（削除）」、当日00時以降なら「当欠」
     return now < deadline ? "deleted" : "当欠";
   }
 
@@ -538,7 +549,7 @@ window.onload = async function () {
 
   async function reloadShifts() {
     const profile = await liff.getProfile();
-    const idToken = liff.getIDToken(); // ★ トークン取得
+    const idToken = liff.getIDToken();
 
     if (!idToken) throw new Error("認証トークンが取得できませんでした。再読み込みしてください。");
 
@@ -553,7 +564,6 @@ window.onload = async function () {
     const data = await fetchJson(url);
 
     if (!data.success) {
-      // messageが直接来る場合と、anycrossRawにJSONが入っている場合の両方を処理
       let errorText = data.message || "";
       
       if (!errorText && data.anycrossRaw) {
@@ -603,17 +613,29 @@ window.onload = async function () {
     }
 
     const state = normalizeText(shift?.state);
-    const canEditBase = hasEditableShiftTime(shift);
+    let canEditBase = hasEditableShiftTime(shift);
+
+    // === ★追加：15日の0時を過ぎたら、15〜22日のシフト変更・削除をロックする ===
+    const targetDateObj = new Date(selectedDateStr + "T00:00:00");
+    const tYear = targetDateObj.getFullYear();
+    const tMonth = targetDateObj.getMonth();
+    const tDate = targetDateObj.getDate();
+    const now = new Date();
+
+    // そのシフトがある月の「15日の0時」をデッドラインとする
+    const lockDeadline = new Date(tYear, tMonth, 15, 0, 0, 0);
+    // 今が締め切りを過ぎていて、かつシフトの日付が15〜22日なら編集不可
+    if (now >= lockDeadline && tDate >= 15 && tDate <= 22) {
+      canEditBase = false;
+    }
+    // === ★ここまで ===
 
     const showEdit = canEditBase && isTodayOrFuture(selectedDateStr);
     const showDelete = canEditBase && isTodayOrFuture(selectedDateStr);
 
-    const targetDate = getDateOnly(new Date(selectedDateStr + "T00:00:00"));
-    const today = getDateOnly(new Date());
-    const isToday = targetDate.getTime() === today.getTime();
-
-    const showMedical =
-      (canEditBase && isToday) || isAbsentState(state);
+    // === ★変更：当欠の場合のみ診断書提出ボタンを表示する ===
+    const showMedical = isAbsentState(state);
+    // === ★ここまで ===
 
     if (btnEdit) {
       btnEdit.style.display = showEdit ? "inline-block" : "none";
@@ -647,7 +669,7 @@ window.onload = async function () {
 
     const startRules = {
       12: ["00", "15", "30", "45"],
-      13: ["00", "15", "30"],
+      13: ["00", "15", "30", "45"],
       15: ["00", "15", "30", "45"],
       16: ["00", "15", "30"],
       17: ["00", "15", "30", "45"],
@@ -671,12 +693,12 @@ window.onload = async function () {
 
     const now = new Date();
 
-    // === ★追加：当日の出勤時間を過ぎているか（早退防止）の判定 ===
     let restrictEarlyLeave = false;
-    if (mode === "view" && originalStart) {
+    let preventEndChange = false;
+
+    if (mode === "view" && originalStart && originalEnd) {
       const targetDate = new Date(selectedDateStr + "T00:00:00");
       
-      // 選択中のシフトが「今日」かどうか
       const isToday = 
         targetDate.getFullYear() === now.getFullYear() &&
         targetDate.getMonth() === now.getMonth() &&
@@ -684,13 +706,18 @@ window.onload = async function () {
 
       if (isToday) {
         const startDt = new Date(`${selectedDateStr}T${originalStart}:00`);
-        // 今の時間が、すでに出勤時間を過ぎているか
+        // 今の時間が、すでに出勤時間を過ぎているか（早退防止）
         if (now > startDt) {
           restrictEarlyLeave = true;
         }
       }
+
+      const originalEndDt = new Date(`${selectedDateStr}T${originalEnd}:00`);
+      // 今の時間が、元の退勤時間を過ぎているか（事後変更防止）
+      if (now >= originalEndDt) {
+        preventEndChange = true;
+      }
     }
-    // === ★ここまで ===
 
     if (mode === "view") {
       const defaultStart = document.createElement("option");
@@ -733,28 +760,28 @@ window.onload = async function () {
     }
 
     // 退勤時間のプルダウン生成
-    for (const h in endRules) {
-      for (const m of endRules[h]) {
-        const time = `${String(h).padStart(2, "0")}:${m}`;
-        const dt = new Date(`${selectedDateStr}T${time}:00`);
-        
-        // 過去の時間はスキップ（既存の処理）
-        if (dt < now) continue;
+    if (!preventEndChange) {
+      for (const h in endRules) {
+        for (const m of endRules[h]) {
+          const time = `${String(h).padStart(2, "0")}:${m}`;
+          const dt = new Date(`${selectedDateStr}T${time}:00`);
+          
+          // 過去の時間はスキップ
+          if (dt < now) continue;
 
-        // === ★追加：早退防止（元の退勤時間より前の時間を非表示にする） ===
-        if (restrictEarlyLeave && originalEnd) {
-          const originalEndDt = new Date(`${selectedDateStr}T${originalEnd}:00`);
-          // 生成しようとしている時間が、元の退勤時間より前ならスキップ
-          if (dt < originalEndDt) {
-            continue;
+          // 早退防止（元の退勤時間より前の時間を非表示）
+          if (restrictEarlyLeave && originalEnd) {
+            const originalEndDt = new Date(`${selectedDateStr}T${originalEnd}:00`);
+            if (dt < originalEndDt) {
+              continue;
+            }
           }
-        }
-        // === ★ここまで ===
 
-        const opt = document.createElement("option");
-        opt.value = time;
-        opt.textContent = time;
-        endSelect.appendChild(opt);
+          const opt = document.createElement("option");
+          opt.value = time;
+          opt.textContent = time;
+          endSelect.appendChild(opt);
+        }
       }
     }
   }
@@ -844,6 +871,12 @@ window.onload = async function () {
     saveEdit.addEventListener("click", async () => {
       editError.textContent = "";
 
+      // === ★追加：保存ボタンを押した瞬間のロックチェック ===
+      if (isLockedPeriod(selectedDateStr)) {
+        editError.textContent = "15日を過ぎたため、15日〜22日のシフトは変更・追加できません。";
+        return; // ここで処理を強制終了する
+      }
+
       if (detailMode === "add") {
         const start = normalizeTime(startSelect.value);
         const end = normalizeTime(endSelect.value);
@@ -882,14 +915,14 @@ window.onload = async function () {
           resultDiv.classList.add("teisyututyu");
 
           const profile = await liff.getProfile();
-          const idToken = liff.getIDToken(); // ★ 追加
+          const idToken = liff.getIDToken(); 
 
           const url =
             GAS_URL +
             "?action=addShift" +
             "&userId=" + encodeURIComponent(profile.userId) +
             "&name=" + encodeURIComponent(profile.displayName) +
-            "&idToken=" + encodeURIComponent(idToken) + // ★ 追加
+            "&idToken=" + encodeURIComponent(idToken) + 
             "&date=" + encodeURIComponent(selectedDateStr) +
             "&start=" + encodeURIComponent(start) +
             "&end=" + encodeURIComponent(end);
@@ -947,6 +980,11 @@ window.onload = async function () {
         return;
       }
 
+      if (endChanged && now >= originalEndDt) {
+        editError.textContent = "本来の退勤時間を過ぎてからの時間変更（事後延長）はできません。公式LINEに相談してください";
+        return;
+      }
+
       if (startDt >= endDt) {
         editError.textContent = "時間の設定が不正です。公式LINEに相談してください";
         return;
@@ -962,13 +1000,13 @@ window.onload = async function () {
         resultDiv.classList.add("teisyututyu");
 
         const profile = await liff.getProfile();
-        const idToken = liff.getIDToken(); // ★ 追加
+        const idToken = liff.getIDToken(); 
 
         const url =
           GAS_URL +
           "?action=update" +
           "&userId=" + encodeURIComponent(profile.userId) +
-          "&idToken=" + encodeURIComponent(idToken) + // ★ 追加
+          "&idToken=" + encodeURIComponent(idToken) + 
           "&shiftId=" + encodeURIComponent(selectedShiftId) +
           "&date=" + encodeURIComponent(selectedDateStr) +
           "&start=" + encodeURIComponent(newStart) +
@@ -1018,7 +1056,13 @@ window.onload = async function () {
         return;
       }
 
-      // ★ 当日00時判定とメッセージの分岐
+      // === ★追加：削除ボタンを押した瞬間のロックチェック ===
+      if (isLockedPeriod(selectedDateStr)) {
+        alert("15日を過ぎたため、15日〜22日のシフトは操作できません。");
+        return; // ここで処理を強制終了する
+      }
+      // === ★ここまで ===
+
       const actionType = determineDeleteOrAbsent(selectedDateStr);
 
       const msg = actionType === "deleted"
@@ -1036,19 +1080,19 @@ window.onload = async function () {
         editError.textContent = "";
 
         const profile = await liff.getProfile();
-        const idToken = liff.getIDToken(); // ★ 追加
+        const idToken = liff.getIDToken(); 
 
         const url =
           GAS_URL +
           "?action=deleteOrAbsent" +
           "&userId=" + encodeURIComponent(profile.userId) +
           "&name=" + encodeURIComponent(profile.displayName) +
-          "&idToken=" + encodeURIComponent(idToken) + // ★ 追加
+          "&idToken=" + encodeURIComponent(idToken) + 
           "&shiftId=" + encodeURIComponent(selectedShiftId) +
           "&date=" + encodeURIComponent(selectedDateStr) +
           "&start=" + encodeURIComponent(originalStart) +
           "&end=" + encodeURIComponent(originalEnd) +
-          "&actionType=" + encodeURIComponent(actionType); // GAS/Anycross側にも判定結果を送付
+          "&actionType=" + encodeURIComponent(actionType);
 
         const data = await fetchJson(url);
 
@@ -1058,7 +1102,6 @@ window.onload = async function () {
           return;
         }
 
-        // ★ カレンダー上のステータスを書き換え
         applyLocalDeleteOrAbsent(selectedShiftId, actionType);
         rerenderCurrentMonth();
 
@@ -1084,19 +1127,8 @@ window.onload = async function () {
   // =====================
   if (btnMedical) {
     btnMedical.addEventListener("click", () => {
-      const dummyShift = {
-        start: originalStart,
-        end: originalEnd,
-        state: originalState
-      };
-
-      const targetDate = getDateOnly(new Date(selectedDateStr + "T00:00:00"));
-      const today = getDateOnly(new Date());
-      const isToday = targetDate.getTime() === today.getTime();
-
-      const canOpenMedical =
-        (hasEditableShiftTime(dummyShift) && isToday) ||
-        isAbsentState(originalState);
+      // === ★変更：当欠の場合のみ開けるようにする ===
+      const canOpenMedical = isAbsentState(originalState);
 
       if (!canOpenMedical) {
         resetMedicalArea();
@@ -1223,13 +1255,13 @@ window.onload = async function () {
 
       try {
         const profile = await liff.getProfile();
-        const idToken = liff.getIDToken(); // ★ 追加
+        const idToken = liff.getIDToken();
 
         const formBody = new URLSearchParams({
           action: "submitMedical",
           userId: profile.userId,
           name: profile.displayName,
-          idToken: idToken, // ★ 追加
+          idToken: idToken,
           shiftId: selectedShiftId,
           date: selectedDateStr,
           start: originalStart,
@@ -1304,7 +1336,6 @@ window.onload = async function () {
     // 2. ログインチェック
     if (!liff.isLoggedIn()) {
       resultDiv.innerHTML = "LINEログインへ移動します…";
-      // 外部ブラウザの場合は明示的にリダイレクト先を指定
       liff.login({ redirectUri: window.location.origin + window.location.pathname });
       return;
     }
@@ -1312,7 +1343,6 @@ window.onload = async function () {
     // 3. IDトークンの取得確認
     const idToken = liff.getIDToken();
     if (!idToken) {
-      // ログインしているのにトークンがない場合は再ログイン
       console.warn("ID Token is missing. Re-logging in...");
       liff.login();
       return;
@@ -1324,10 +1354,10 @@ window.onload = async function () {
       resultDiv.textContent = "更新中...";
       resultDiv.classList.add("kousintyu");
       
-      await loadHolidays(); // ★追加：シフトを取得する前に祝日データを読み込む
+      await loadHolidays();
       await reloadShifts();
       
-      // 5. データ取得成功後にURLを綺麗にする（オプション）
+      // 5. データ取得成功後にURLを綺麗にする
       const url = new URL(window.location.href);
       if (url.searchParams.has('code') || url.searchParams.has('state')) {
         window.history.replaceState(null, null, window.location.pathname);
@@ -1339,38 +1369,46 @@ window.onload = async function () {
       console.log("★INCLUDES登録:", String(err.message).includes("登録"));
       console.error("Fetch Error:", err);
       
-      // === ★修正：エラーメッセージの中に「登録」という言葉が含まれているか判定 ===
-      if (err.message && err.message.includes("登録")) {
-        // 未登録エラーの場合の表示（ボタン付き）
-        resultDiv.innerHTML = `
-          <div style="text-align: center; margin-top: 20px;">
-            <p style="color: #ff4d8d; font-weight: bold; margin-bottom: 15px;">
-              ${err.message}
-            </p>
-            <p style="font-size: 12px; margin-bottom: 15px;">
-              ※登録完了後、再度メニューからこの画面を開き直してください。
-            </p>
-            <button id="go-register-btn" style="padding: 10px 20px; background-color: #06C755; color: white; border: none; border-radius: 5px; cursor: pointer;">
-              登録画面へ進む
-            </button>
-          </div>
-        `;
+      const calView = document.getElementById("calendarView");
+      if (calView) calView.style.display = "none";
 
-        // 登録画面への遷移処理
-        document.getElementById("go-register-btn").addEventListener("click", () => {
+      resultDiv.innerHTML = "";
+
+      if (err.message && err.message.includes("登録")) {
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "text-align: center; margin-top: 30px; padding: 0 20px;";
+
+        const msg1 = document.createElement("p");
+        msg1.style.cssText = "color: #ff4d8d; font-size: 16px; font-weight: bold; margin-bottom: 15px;";
+        msg1.textContent = err.message;
+
+        const msg2 = document.createElement("p");
+        msg2.style.cssText = "font-size: 12px; color: #555; margin-bottom: 25px;";
+        msg2.textContent = "※登録完了後、再度メニューからこの画面を開き直してください。";
+
+        const btn = document.createElement("button");
+        btn.id = "go-register-btn";
+        btn.style.cssText = "display: inline-block !important; padding: 14px 20px !important; background-color: #06C755 !important; color: #ffffff !important; border: none !important; border-radius: 8px !important; font-size: 15px !important; font-weight: bold !important; cursor: pointer !important; width: 80% !important; max-width: 300px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important; visibility: visible !important; opacity: 1 !important;";
+        btn.textContent = "登録画面へ進む";
+
+        btn.addEventListener("click", () => {
           liff.openWindow({
-            url: "https://liff.line.me/2009827198-qvnHhjxl", // ←実際のURLに変更してください
-            external: false // LINE内ブラウザで開く
+            url: "https://liff.line.me/2009827198-qvnHhjxl",
+            external: false
           });
         });
 
+        wrap.appendChild(msg1);
+        wrap.appendChild(msg2);
+        wrap.appendChild(btn);
+        resultDiv.appendChild(wrap);
+
       } else {
-        // その他の一般的なエラーの場合（ボタンなし）
         resultDiv.innerHTML = `
-          <div style="text-align: center; margin-top: 20px;">
+          <div style="text-align: center; margin-top: 30px; padding: 0 20px;">
             <p style="color: #ff4d8d; font-weight: bold; margin-bottom: 15px;">
               取得エラーが発生しました<br>
-              <span style="font-size: 14px; font-weight: normal;">${err.message}</span>
+              <span style="font-size: 14px; font-weight: normal; color: #333;">${err.message}</span>
             </p>
             <p style="font-size: 12px; margin-bottom: 15px; color: #666;">
               時間をおいて再度お試しいただくか、管理者へお問い合わせください。
@@ -1381,11 +1419,10 @@ window.onload = async function () {
       
     } finally {
       resultDiv.classList.remove("kousintyu");
-      // resultDivにボタンが入っている場合は上書きしない
       if (!document.getElementById("go-register-btn")) {
         setButtonsDisabled(false);
       } else {
-        setButtonsDisabled(false); // ボタン類はfalseに戻すが、resultDivは触らない
+        setButtonsDisabled(false);
       }
     }
 
@@ -1423,22 +1460,17 @@ window.onload = async function () {
 
     currentMonthSpan.textContent = `${year}年 ${month + 1}月`;
 
-    // === ★追加：先月、今月、来月以外の移動を制限 ===
     const now = new Date();
-    // 現在の月からの差分を計算（例：今月=0, 先月=-1, 来月=1, 再来月=2）
     const diffMonths = (year - now.getFullYear()) * 12 + (month - now.getMonth());
 
     if (prevMonthBtn) {
-      // 先月(-1)より前に行かせない（非活性化して薄くする）
       prevMonthBtn.disabled = diffMonths <= -1;
       prevMonthBtn.style.opacity = diffMonths <= -1 ? "0.3" : "1";
     }
     if (nextMonthBtn) {
-      // 来月(1)より先に行かせない（非活性化して薄くする）
       nextMonthBtn.disabled = diffMonths >= 1;
       nextMonthBtn.style.opacity = diffMonths >= 1 ? "0.3" : "1";
     }
-    // === ★ここまで ===
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -1461,25 +1493,28 @@ window.onload = async function () {
       dateSpan.className = "date";
       dateSpan.textContent = day;
 
-      // === ★修正：祝日と土日の色を変更 ===
       const dayOfWeek = new Date(year, month, day).getDay();
       
-      // nationalHolidaysの中に、この日付(YYYY-MM-DD)が含まれているかチェック
+      // === ★追加：15日〜22日のシフト追加（+ボタン）もロックする ===
+      const lockDeadlineCalendar = new Date(year, month, 15, 0, 0, 0);
+      const isLocked = now >= lockDeadlineCalendar && day >= 15 && day <= 22;
+      // ==========================================================
+
       if (nationalHolidays[fullDateStr]) {
-        dateSpan.style.color = "#ff4d8d"; // 祝日（赤）
+        dateSpan.style.color = "#ff4d8d"; // 祝日
       } else if (dayOfWeek === 0) {
-        dateSpan.style.color = "#ff4d8d"; // 日曜日（赤）
+        dateSpan.style.color = "#ff4d8d"; // 日曜日
       } else if (dayOfWeek === 6) {
-        dateSpan.style.color = "#01b6ff"; // 土曜日（青）
+        dateSpan.style.color = "#01b6ff"; // 土曜日
       }
-      // === ★ここまで ===
 
       dayDiv.appendChild(dateSpan);
 
       const dayShifts = shiftData[fullDateStr] || [];
       const hasShift = hasVisibleShiftOnDay(dayShifts) || hasAnyShiftRecordOnDay(dayShifts);
 
-      if (!hasShift && isTodayOrFuture(fullDateStr)) {
+      // ロック期間中(!isLocked)は + ボタンを出さない
+      if (!hasShift && isTodayOrFuture(fullDateStr) && !isLocked) {
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "add-shift-button";
