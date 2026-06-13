@@ -1509,10 +1509,6 @@ window.onload = async function () {
 
       const dayOfWeek = new Date(year, month, day).getDay();
       
-      // === ★15日〜22日のシフト新規追加（+ボタン）ロック判定 ===
-      const lockDeadlineCalendar = new Date(year, month, 13, 0, 0, 0);
-      const isLocked = now >= lockDeadlineCalendar && day >= 13 && day <= 22;
-
       if (nationalHolidays[fullDateStr]) {
         dateSpan.style.color = "#ff4d8d"; // 祝日
       } else if (dayOfWeek === 0) {
@@ -1526,8 +1522,8 @@ window.onload = async function () {
       const dayShifts = shiftData[fullDateStr] || [];
       const hasShift = hasVisibleShiftOnDay(dayShifts) || hasAnyShiftRecordOnDay(dayShifts);
 
-      // ロック期間中(!isLocked)は + ボタンを出さない
-      if (!hasShift && isTodayOrFuture(fullDateStr) && !isLocked) {
+      // ★変更：「 && !isLocked 」を削除し、過去日でなければ常に＋ボタンを表示する
+      if (!hasShift && isTodayOrFuture(fullDateStr)) {
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "add-shift-button";
