@@ -163,10 +163,19 @@ window.onload = async function () {
     );
   }
 
-  function getShiftDisplayText(shift) {
+  function getShiftDisplayText(shift, viewMode = "calendar") {
     const state = normalizeText(shift?.state);
     const start = normalizeTime(shift?.start);
     const end = normalizeTime(shift?.end);
+
+    // ★追加：早退かつ時間が設定されている場合の特別表示
+    if (isEarlyLeaveState(state) && start && end) {
+      if (viewMode === "detail") {
+        return `${start}-${end} 早退`;
+      } else {
+        return `早 ${start}-${end}`;
+      }
+    }
 
     if (isSpecialState(state)) {
       return state;
@@ -816,7 +825,8 @@ window.onload = async function () {
     originalState = normalizeText(shift.state);
 
     detailDate.textContent = formatDateJP(date);
-    detailShift.textContent = getShiftDisplayText(shift) || "表示できる情報がありません";
+    // ★変更：第2引数に "detail" を渡す
+    detailShift.textContent = getShiftDisplayText(shift, "detail") || "表示できる情報がありません";
 
     editArea.style.display = "none";
     editError.textContent = "";
@@ -1533,7 +1543,7 @@ window.onload = async function () {
       }
 
       dayShifts.forEach((shift) => {
-        const displayText = getShiftDisplayText(shift);
+        const displayText = getShiftDisplayText(shift, "calendar");
         if (!displayText) return;
 
         const shiftSpan = document.createElement("div");
