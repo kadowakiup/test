@@ -1032,7 +1032,9 @@ window.onload = async function () {
           "&shiftId=" + encodeURIComponent(selectedShiftId) +
           "&date=" + encodeURIComponent(selectedDateStr) +
           "&start=" + encodeURIComponent(newStart) +
-          "&end=" + encodeURIComponent(newEnd);
+          "&end=" + encodeURIComponent(newEnd) +
+          "&originalStart=" + encodeURIComponent(originalStart) +
+          "&originalEnd=" + encodeURIComponent(originalEnd);
 
         const data = await fetchJson(url);
 
