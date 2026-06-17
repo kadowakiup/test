@@ -75,18 +75,6 @@ window.onload = async function () {
     return String(value || "").trim();
   }
 
-  // === ★追加：シフトが15日〜22日で、かつ今が15日以降かどうかを判定する関数 ===
-  function isLockedPeriod(dateStr) {
-    const targetDateObj = new Date(dateStr + "T00:00:00");
-    const tYear = targetDateObj.getFullYear();
-    const tMonth = targetDateObj.getMonth();
-    const tDate = targetDateObj.getDate();
-    const now = new Date();
-
-    const lockDeadline = new Date(tYear, tMonth, 13, 0, 0, 0);
-    // 今が15日を過ぎていて、かつ対象シフトが15〜22日なら true（ロック中）を返す
-    return now >= lockDeadline && tDate >= 13 && tDate <= 22;
-  }
 
   function normalizeTime(value) {
     const v = normalizeText(value);
@@ -644,24 +632,13 @@ window.onload = async function () {
     const state = normalizeText(shift?.state);
     const canEditBase = hasEditableShiftTime(shift);
 
-    // === ★追加：15日〜22日のロック期間かどうかを判定 ===
-    const targetDateObj = new Date(selectedDateStr + "T00:00:00");
-    const tYear = targetDateObj.getFullYear();
-    const tMonth = targetDateObj.getMonth();
-    const tDate = targetDateObj.getDate();
-    const now = new Date();
-
-    const lockDeadline = new Date(tYear, tMonth, 13, 0, 0, 0);
-    const isLockPeriod = now >= lockDeadline && tDate >= 13 && tDate <= 22;
-    // ===========================================
-
-    // 時間変更：15日ロックに関わらず、過去日でなければ編集可能
+    // 時間変更：過去日でなければ編集可能
     const showEdit = canEditBase && isTodayOrFuture(selectedDateStr);
 
-    // 削除：過去日不可、かつ「ロック期間(15~22日の操作)」も不可
-    const showDelete = canEditBase && isTodayOrFuture(selectedDateStr) && !isLockPeriod;
+    // 削除：過去日でなければ削除（休み）可能  ★ここからロック条件を外しました
+    const showDelete = canEditBase && isTodayOrFuture(selectedDateStr);
 
-    // === ★変更：欠勤の場合のみ診断書提出ボタンを表示する ===
+    // 欠勤の場合のみ診断書提出ボタンを表示する
     const showMedical = isMedicalEligibleState(state);
 
     if (btnEdit) {
@@ -1077,12 +1054,6 @@ window.onload = async function () {
       };
 
       if (!hasEditableShiftTime(dummyShift) || !isTodayOrFuture(selectedDateStr)) {
-        return;
-      }
-
-      // === ★追加：削除ボタンを押した瞬間のロックチェック（開きっぱなし対策） ===
-      if (isLockedPeriod(selectedDateStr)) {
-        alert("15日を過ぎたため、15日〜22日のシフトは操作できません。");
         return;
       }
 
