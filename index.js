@@ -59,7 +59,8 @@ window.onload = async function () {
   let originalStart = "";
   let originalEnd = "";
   let originalState = "";
-
+let actualStart = ""; // ★追加
+  let actualEnd = "";   // ★追加
   // 画面モード
   let detailMode = "view"; // "view" | "add"
 
@@ -245,6 +246,8 @@ window.onload = async function () {
     originalStart = "";
     originalEnd = "";
     originalState = "";
+    actualStart = ""; // ★追加
+    actualEnd = "";   // ★追加
     detailMode = "view";
 
     if (editArea) editArea.style.display = "none";
@@ -800,7 +803,8 @@ window.onload = async function () {
     originalStart = normalizeTime(shift.start);
     originalEnd = normalizeTime(shift.end);
     originalState = normalizeText(shift.state);
-
+actualStart = shift.actualStart || ""; // ★追加
+    actualEnd = shift.actualEnd || "";     // ★追加
     detailDate.textContent = formatDateJP(date);
     // ★変更：第2引数に "detail" を渡す
     detailShift.textContent = getShiftDisplayText(shift, "detail") || "表示できる情報がありません";
@@ -1011,8 +1015,9 @@ window.onload = async function () {
           "&start=" + encodeURIComponent(newStart) +
           "&end=" + encodeURIComponent(newEnd) +
           "&originalStart=" + encodeURIComponent(originalStart) +
-          "&originalEnd=" + encodeURIComponent(originalEnd);
-
+          "&originalEnd=" + encodeURIComponent(originalEnd)+
+          "&actualStart=" + encodeURIComponent(actualStart) + // ★追加
+          "&actualEnd=" + encodeURIComponent(actualEnd);      // ★追加
         const data = await fetchJson(url);
 
         if (!data.success) {
