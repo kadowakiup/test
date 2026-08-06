@@ -1,4 +1,4 @@
-// 1. WEBHOOK_URL を Cloudflare Workers で発行されたURLに変更する
+const LIFF_ID = "2009827198-UQgt92rl";
 const WEBHOOK_URL = "https://syukkin-test.kadowaki-universal-prime.workers.dev/"; 
 
 // 2. 自動リトライ機能（fetchWithRetry）の中身をCloudflare向けに修正
